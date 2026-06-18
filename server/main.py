@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
 from pydantic import BaseModel
+from datetime import datetime, timedelta
 from mock_data import inventory_items, orders, demand_forecasts, backlog_items, spending_summary, monthly_spending, category_spending, recent_transactions, purchase_orders
 
 app = FastAPI(title="Factory Inventory Management System")
@@ -38,11 +39,13 @@ def apply_filters(items: list, warehouse: Optional[str] = None, category: Option
     if warehouse and warehouse != 'all':
         filtered = [item for item in filtered if item.get('warehouse') == warehouse]
 
+    # Use `or ''` (not the .get default) so items with an explicit None value
+    # (e.g. restock orders span no single category/warehouse) don't crash .lower()
     if category and category != 'all':
-        filtered = [item for item in filtered if item.get('category', '').lower() == category.lower()]
+        filtered = [item for item in filtered if (item.get('category') or '').lower() == category.lower()]
 
     if status and status != 'all':
-        filtered = [item for item in filtered if item.get('status', '').lower() == status.lower()]
+        filtered = [item for item in filtered if (item.get('status') or '').lower() == status.lower()]
 
     return filtered
 
@@ -120,6 +123,14 @@ class CreatePurchaseOrderRequest(BaseModel):
     expected_delivery_date: str
     notes: Optional[str] = None
 
+class CreateOrderRequest(BaseModel):
+    # items: [{sku, name, quantity, unit_price}]
+    items: List[dict]
+    customer: Optional[str] = "Internal Restock"
+
+# Restocking orders use a fixed 14-day delivery lead time (see Restocking tab)
+RESTOCK_LEAD_TIME_DAYS = 14
+
 # API endpoints
 @app.get("/")
 def root():
@@ -160,6 +171,34 @@ def get_order(order_id: str):
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     return order
+
+@app.post("/api/orders", response_model=Order, status_code=201)
+def create_order(request: CreateOrderRequest):
+    """Create a restocking order. Appended to the in-memory orders list (not persisted)."""
+    if not request.items:
+        raise HTTPException(status_code=400, detail="Order must contain at least one item")
+
+    now = datetime.now()
+    expected_delivery = now + timedelta(days=RESTOCK_LEAD_TIME_DAYS)
+    total_value = sum(item["quantity"] * item["unit_price"] for item in request.items)
+
+    new_order = {
+        "id": str(len(orders) + 1),
+        # "R" prefix distinguishes restock orders from generated demo orders
+        "order_number": f"ORD-{now:%Y}-R{len(orders) + 1:04d}",
+        "customer": request.customer or "Internal Restock",
+        "items": request.items,
+        "status": "Submitted",
+        "order_date": now.isoformat(timespec="seconds"),
+        "expected_delivery": expected_delivery.isoformat(timespec="seconds"),
+        "total_value": total_value,
+        "actual_delivery": None,
+        # A restock order can span multiple warehouses/categories, so leave these unset
+        "warehouse": None,
+        "category": None,
+    }
+    orders.append(new_order)
+    return new_order
 
 @app.get("/api/demand", response_model=List[DemandForecast])
 def get_demand_forecasts():

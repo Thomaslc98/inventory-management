@@ -6,6 +6,7 @@ export default {
     orders: 'Orders',
     finance: 'Finance',
     demandForecast: 'Demand Forecast',
+    restocking: 'Restocking',
     companyName: 'Catalyst Components',
     subtitle: 'Inventory Management System'
   },
@@ -106,12 +107,14 @@ export default {
     title: 'Orders',
     description: 'View and manage customer orders',
     allOrders: 'All Orders',
+    submittedOrders: 'Submitted Orders',
     totalOrders: 'Total Orders',
     totalRevenue: 'Total Revenue',
     avgOrderValue: 'Avg Order Value',
     onTimeDelivery: 'On-Time Delivery',
     itemsCount: '{count} items',
     quantity: 'Qty',
+    leadTimeDays: '{days} days',
     table: {
       orderNumber: 'Order Number',
       orderId: 'Order ID',
@@ -125,7 +128,8 @@ export default {
       totalValue: 'Total Value',
       status: 'Status',
       expectedDelivery: 'Expected Delivery',
-      actualDelivery: 'Actual Delivery'
+      actualDelivery: 'Actual Delivery',
+      leadTime: 'Lead Time'
     }
   },
 
@@ -204,6 +208,7 @@ export default {
     shipped: 'Shipped',
     processing: 'Processing',
     backordered: 'Backordered',
+    submitted: 'Submitted',
     inStock: 'In Stock',
     lowStock: 'Low Stock',
     adequate: 'Adequate'
@@ -324,5 +329,29 @@ export default {
     filter: 'Filter',
     export: 'Export',
     items: 'items'
+  },
+
+  // Restocking
+  restocking: {
+    title: 'Restocking',
+    description: 'Set your budget and order recommended restock items',
+    budgetLabel: 'Available Budget',
+    recommendedItems: 'Recommended Items',
+    placeOrder: 'Place Order',
+    orderPlaced: 'Order {orderNumber} submitted successfully',
+    itemsSelected: 'Items Selected',
+    totalCost: 'Total Cost',
+    remainingBudget: 'Remaining Budget',
+    belowReorder: 'Below reorder',
+    noRecommendations: 'No items fit within this budget',
+    table: {
+      sku: 'SKU',
+      itemName: 'Item Name',
+      onHand: 'On Hand',
+      reorderPoint: 'Reorder Point',
+      orderQty: 'Order Qty',
+      unitCost: 'Unit Cost',
+      lineCost: 'Line Cost'
+    }
   }
 }
